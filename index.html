@@ -341,6 +341,26 @@
   }
   .scrubs-icon { font-size: 0.9rem; flex-shrink: 0; }
 
+  /* Co-interns */
+  .cointerns {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(71,194,255,0.06);
+    border: 1px solid rgba(71,194,255,0.18);
+    border-radius: 6px;
+    font-size: 0.76rem;
+    color: var(--accent2);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .cointerns-label {
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
   /* Empty / error / placeholder */
   .empty-state {
     text-align: center;
@@ -21647,6 +21667,18 @@ function todayStr() {
   return String(d.getDate()).padStart(2,'0') + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + d.getFullYear();
 }
 
+// Precompute: for each (date, dept) -> sorted list of all serials posted there
+const CO_INTERNS = {};
+Object.entries(SCHEDULE).forEach(([serial, entries]) => {
+  entries.forEach(([date, dept]) => {
+    if (!dept) return;
+    const key = date + '|' + dept;
+    if (!CO_INTERNS[key]) CO_INTERNS[key] = [];
+    CO_INTERNS[key].push(Number(serial));
+  });
+});
+Object.values(CO_INTERNS).forEach(arr => arr.sort((a,b) => a-b));
+
 function parseDate(str) {
   const [d,m,y] = str.split('-').map(Number);
   return new Date(y, m-1, d);
@@ -21674,7 +21706,7 @@ function getDeptType(dept) {
   return 'Department';
 }
 
-function buildCard(date, dept, isToday, extraClass) {
+function buildCard(date, dept, isToday, extraClass, cointerns) {
   const d = parseDate(date);
   const weekday = WEEKDAYS[d.getDay()];
   const dayNum = String(d.getDate()).padStart(2,'0');
@@ -21695,6 +21727,11 @@ function buildCard(date, dept, isToday, extraClass) {
     scrubsHtml = '<div class="scrubs-reminder"><span class="scrubs-icon">🩺</span> Reminder: Get your scrubs before this posting!</div>';
   }
 
+  let cointernHtml = '';
+  if (!isHoliday && cointerns && cointerns.length > 0) {
+    cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + cointerns.join(', ') + '</div>';
+  }
+
   const classes = ['day-card', isToday ? 'today' : '', isHoliday ? 'holiday' : '', extraClass || ''].filter(Boolean).join(' ');
 
   return '<div class="' + classes + '">' +
@@ -21705,6 +21742,7 @@ function buildCard(date, dept, isToday, extraClass) {
       todayBadge +
     '</div>' +
     scrubsHtml +
+    cointernHtml +
     '</div>';
 }
 
@@ -21746,7 +21784,9 @@ function updateSingleDay() {
     return;
   }
   const today = todayStr();
-  const card = buildCard(entry[0], entry[1], entry[0] === today, '');
+  const coKey = entry[1] ? entry[0] + '|' + entry[1] : null;
+  const coList = coKey ? (CO_INTERNS[coKey] || []).filter(s => s !== currentSerial) : [];
+  const card = buildCard(entry[0], entry[1], entry[0] === today, '', coList);
   sdr.className = 'single-day-result visible';
   sdr.innerHTML = '<div class="single-day-label">Result for ' + targetDate + '</div>' + card;
   // Hide full schedule when showing single day
@@ -21817,7 +21857,9 @@ function renderCards(data) {
       if (currentFilter === 'duty' && isHoliday) hidden = true;
       if (currentFilter === 'holiday' && !isHoliday) hidden = true;
       if (!hidden) visibleCount++;
-      const card = buildCard(date, dept, isToday, hidden ? 'hidden' : '');
+      const coKey2 = dept ? date + '|' + dept : null;
+      const coList2 = coKey2 ? (CO_INTERNS[coKey2] || []).filter(s => s !== currentSerial) : [];
+      const card = buildCard(date, dept, isToday, hidden ? 'hidden' : '', coList2);
       cardsHtml += card;
     });
 
