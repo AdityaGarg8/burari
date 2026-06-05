@@ -378,7 +378,7 @@
   <div class="search-section">
     <div class="input-wrap">
       <span class="input-label">Serial No.</span>
-      <input type="number" id="serialInput" min="1" max="50" placeholder="01" />
+      <input type="number" id="serialInput" min="1" max="58" placeholder="01" />
     </div>
     <button class="search-btn" onclick="lookupSerial()">View Schedule →</button>
   </div>
@@ -21756,8 +21756,8 @@ function updateSingleDay() {
 function lookupSerial() {
   const val = document.getElementById('serialInput').value.trim();
   const serial = parseInt(val);
-  if (!val || isNaN(serial) || serial < 1 || serial > 50) {
-    showError('Please enter a valid serial number between 1 and 50.');
+  if (!val || isNaN(serial) || serial < 1 || serial > 58) {
+    showError('Please enter a valid serial number between 1 and 58.');
     return;
   }
   const data = SCHEDULE[String(serial)];
