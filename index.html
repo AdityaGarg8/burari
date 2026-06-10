@@ -371,7 +371,6 @@
   }
   .scrubs-icon { font-size: 0.9rem; flex-shrink: 0; }
 
-  .partner-tag { color: #b47aff; }
 
   /* Partner interns (Casualty ↔ Surgery night) */
   .partnerinterns {
@@ -428,7 +427,7 @@
   .cointerns-legend {
     margin-top: 5px;
     font-size: 0.65rem;
-    color: #b47aff;
+    color: var(--muted);
     letter-spacing: 0.05em;
     opacity: 0.8;
   }
@@ -21901,9 +21900,9 @@ function buildCard(date, dept, isToday, extraClass, cointerns, cabpool, partnerI
   if (hasCoInterns || hasPartners) {
     const coItems = (cointerns || []).map(s => s + ': ' + (NAMES[s] || s));
     const partnerLabel = dept === 'Casualty Night' ? 'Surgery Intern' : 'Casualty Intern';
-    const partnerItems = (partnerInterns || []).map(s => '<span class="partner-tag">' + s + ': ' + (NAMES[s] || s) + '</span>');
+    const partnerItems = (partnerInterns || []).map(s => s + ': ' + (NAMES[s] || s) + '*');
     const allItems = coItems.concat(partnerItems);
-    const legend = hasPartners ? '<div class="cointerns-legend">' + partnerLabel + '</div>' : '';
+    const legend = hasPartners ? '<div class="cointerns-legend">* ' + partnerLabel + '</div>' : '';
     cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + allItems.join(', ') + legend + '</div>';
   }
 
