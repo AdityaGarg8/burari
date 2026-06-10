@@ -195,6 +195,27 @@
   }
   .filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
+  .history-btn {
+    background: var(--card);
+    border: 1.5px dashed var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+  .history-btn.active {
+    background: transparent;
+    border-color: var(--muted);
+    color: var(--text);
+  }
+  .history-btn:hover { border-color: var(--text); color: var(--text); }
+
   /* Single day result */
   .single-day-result {
     margin-bottom: 32px;
@@ -444,6 +465,7 @@
     <button class="filter-btn active" onclick="setFilter('all', this)">All Days</button>
     <button class="filter-btn" onclick="setFilter('duty', this)">Duty Only</button>
     <button class="filter-btn" onclick="setFilter('holiday', this)">Holidays</button>
+    <button class="history-btn" id="historyBtn" onclick="toggleHistory()">Show Past</button>
   </div>
 
   <div class="single-day-result" id="singleDayResult"></div>
@@ -21859,6 +21881,7 @@ function buildCard(date, dept, isToday, extraClass, cointerns, cabpool) {
 let currentFilter = 'all';
 let currentData = null;
 let currentSerial = null;
+let showPast = false;
 
 function setFilter(f, el) {
   currentFilter = f;
@@ -21906,6 +21929,17 @@ function updateSingleDay() {
   document.getElementById('results').className = '';
 }
 
+function toggleHistory() {
+  showPast = !showPast;
+  const btn = document.getElementById('historyBtn');
+  btn.textContent = showPast ? 'Hide Past' : 'Show Past';
+  btn.classList.toggle('active', showPast);
+  if (currentSerial) {
+    const dateVal = document.getElementById('dateInput').value;
+    if (!dateVal) renderCards(currentData);
+  }
+}
+
 function lookupSerial() {
   const val = document.getElementById('serialInput').value.trim();
   const serial = parseInt(val);
@@ -21921,6 +21955,9 @@ function lookupSerial() {
   currentData = data;
   currentSerial = serial;
   currentFilter = 'all';
+  showPast = false;
+  const hBtn = document.getElementById('historyBtn');
+  if (hBtn) { hBtn.textContent = 'Show Past'; hBtn.classList.remove('active'); }
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.filter-btn')[0].classList.add('active');
 
@@ -21951,7 +21988,10 @@ function renderCards(data) {
   r.className = 'visible';
 
   const months = {};
-  data.forEach(([date, dept]) => {
+  const todayDate = parseDate(todayStr());
+  const filteredData = showPast ? data : data.filter(([date]) => parseDate(date) >= todayDate);
+
+  filteredData.forEach(([date, dept]) => {
     const d = parseDate(date);
     const key = MONTHS[d.getMonth()] + ' ' + d.getFullYear();
     if (!months[key]) months[key] = [];
