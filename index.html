@@ -371,6 +371,28 @@
   }
   .scrubs-icon { font-size: 0.9rem; flex-shrink: 0; }
 
+  .partner-tag { color: #b47aff; }
+
+  /* Partner interns (Casualty ↔ Surgery night) */
+  .partnerinterns {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(180, 120, 255, 0.06);
+    border: 1px dashed rgba(180, 120, 255, 0.35);
+    border-radius: 6px;
+    font-size: 0.76rem;
+    color: #b47aff;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .partnerinterns-label {
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
   /* Cab pool */
   .cabpool {
     margin-top: 8px;
@@ -402,6 +424,13 @@
     color: var(--accent2);
     font-family: 'Space Mono', monospace;
     letter-spacing: 0.04em;
+  }
+  .cointerns-legend {
+    margin-top: 5px;
+    font-size: 0.65rem;
+    color: #b47aff;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
   }
   .cointerns-label {
     color: var(--muted);
@@ -21791,6 +21820,20 @@ Object.entries(SCHEDULE).forEach(([serial, entries]) => {
 });
 Object.values(CO_INTERNS).forEach(arr => arr.sort((a,b) => a-b));
 
+// Casualty Night <-> Surgery Night cross-posting lookup: date -> {casualty: [serials], surgery: [serials]}
+const CROSS_NIGHT = {};
+Object.entries(SCHEDULE).forEach(([serial, entries]) => {
+  entries.forEach(([date, dept]) => {
+    if (!dept) return;
+    if (dept === 'Casualty Night' || dept === 'Surgery (Night)') {
+      if (!CROSS_NIGHT[date]) CROSS_NIGHT[date] = { casualty: [], surgery: [] };
+      if (dept === 'Casualty Night') CROSS_NIGHT[date].casualty.push(Number(serial));
+      else CROSS_NIGHT[date].surgery.push(Number(serial));
+    }
+  });
+});
+Object.values(CROSS_NIGHT).forEach(obj => { obj.casualty.sort((a,b)=>a-b); obj.surgery.sort((a,b)=>a-b); });
+
 // Night duty lookup: date -> sorted list of all serials on any night posting
 const NIGHT_POOL = {};
 Object.entries(SCHEDULE).forEach(([serial, entries]) => {
@@ -21831,7 +21874,7 @@ function getDeptType(dept) {
   return 'Department';
 }
 
-function buildCard(date, dept, isToday, extraClass, cointerns, cabpool) {
+function buildCard(date, dept, isToday, extraClass, cointerns, cabpool, partnerInterns) {
   const d = parseDate(date);
   const weekday = WEEKDAYS[d.getDay()];
   const dayNum = String(d.getDate()).padStart(2,'0');
@@ -21853,8 +21896,15 @@ function buildCard(date, dept, isToday, extraClass, cointerns, cabpool) {
   }
 
   let cointernHtml = '';
-  if (!isHoliday && cointerns && cointerns.length > 0) {
-    cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + cointerns.map(s => s + ': ' + (NAMES[s] || s)).join(', ') + '</div>';
+  const hasCoInterns = !isHoliday && cointerns && cointerns.length > 0;
+  const hasPartners = !isHoliday && partnerInterns && partnerInterns.length > 0;
+  if (hasCoInterns || hasPartners) {
+    const coItems = (cointerns || []).map(s => s + ': ' + (NAMES[s] || s));
+    const partnerLabel = dept === 'Casualty Night' ? 'Surgery Intern' : 'Casualty Intern';
+    const partnerItems = (partnerInterns || []).map(s => '<span class="partner-tag">' + s + ': ' + (NAMES[s] || s) + '</span>');
+    const allItems = coItems.concat(partnerItems);
+    const legend = hasPartners ? '<div class="cointerns-legend">' + partnerLabel + '</div>' : '';
+    cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + allItems.join(', ') + legend + '</div>';
   }
 
   const isNight = !isHoliday && dept && (dept.includes('Night') || dept === 'Casualty Night');
@@ -21922,13 +21972,23 @@ function updateSingleDay() {
   const nightPool = (NIGHT_POOL[entry[0]] || []).filter(s => s !== currentSerial);
   const isThisNight = entry[1] && (entry[1].includes('Night') || entry[1] === 'Casualty Night');
   const cabList = isThisNight ? nightPool.filter(s => !coList.includes(s)) : [];
-  const card = buildCard(entry[0], entry[1], entry[0] === today, '', coList, cabList);
+  const partnerList = getPartnerInterns(entry[0], entry[1], currentSerial);
+  const card = buildCard(entry[0], entry[1], entry[0] === today, '', coList, cabList, partnerList);
   sdr.className = 'single-day-result visible';
   sdr.innerHTML = '<div class="single-day-label">Result for ' + targetDate + '</div>' + card;
   // Hide full schedule when showing single day
   document.getElementById('results').className = '';
 }
 
+
+function getPartnerInterns(date, dept, selfSerial) {
+  if (!dept) return [];
+  const cross = CROSS_NIGHT[date];
+  if (!cross) return [];
+  if (dept === 'Casualty Night') return cross.surgery.filter(s => s !== selfSerial);
+  if (dept === 'Surgery (Night)') return cross.casualty.filter(s => s !== selfSerial);
+  return [];
+}
 function toggleHistory() {
   showPast = !showPast;
   const btn = document.getElementById('historyBtn');
@@ -22016,7 +22076,8 @@ function renderCards(data) {
       const nightPool2 = (NIGHT_POOL[date] || []).filter(s => s !== currentSerial);
       const isThisNight2 = dept && (dept.includes('Night') || dept === 'Casualty Night');
       const cabList2 = isThisNight2 ? nightPool2.filter(s => !coList2.includes(s)) : [];
-      const card = buildCard(date, dept, isToday, hidden ? 'hidden' : '', coList2, cabList2);
+      const partnerList2 = getPartnerInterns(date, dept, currentSerial);
+      const card = buildCard(date, dept, isToday, hidden ? 'hidden' : '', coList2, cabList2, partnerList2);
       cardsHtml += card;
     });
 
