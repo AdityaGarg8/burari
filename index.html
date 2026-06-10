@@ -341,6 +341,26 @@
   }
   .scrubs-icon { font-size: 0.9rem; flex-shrink: 0; }
 
+  /* Cab pool */
+  .cabpool {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 157, 74, 0.06);
+    border: 1px solid rgba(255, 157, 74, 0.2);
+    border-radius: 6px;
+    font-size: 0.76rem;
+    color: var(--scrubs-text);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+  .cabpool-label {
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
   /* Co-interns */
   .cointerns {
     margin-top: 8px;
@@ -21679,6 +21699,19 @@ Object.entries(SCHEDULE).forEach(([serial, entries]) => {
 });
 Object.values(CO_INTERNS).forEach(arr => arr.sort((a,b) => a-b));
 
+// Night duty lookup: date -> sorted list of all serials on any night posting
+const NIGHT_POOL = {};
+Object.entries(SCHEDULE).forEach(([serial, entries]) => {
+  entries.forEach(([date, dept]) => {
+    if (!dept) return;
+    if (dept.includes('Night') || dept === 'Casuality Night') {
+      if (!NIGHT_POOL[date]) NIGHT_POOL[date] = [];
+      NIGHT_POOL[date].push(Number(serial));
+    }
+  });
+});
+Object.values(NIGHT_POOL).forEach(arr => arr.sort((a,b) => a-b));
+
 function parseDate(str) {
   const [d,m,y] = str.split('-').map(Number);
   return new Date(y, m-1, d);
@@ -21706,7 +21739,7 @@ function getDeptType(dept) {
   return 'Department';
 }
 
-function buildCard(date, dept, isToday, extraClass, cointerns) {
+function buildCard(date, dept, isToday, extraClass, cointerns, cabpool) {
   const d = parseDate(date);
   const weekday = WEEKDAYS[d.getDay()];
   const dayNum = String(d.getDate()).padStart(2,'0');
@@ -21732,6 +21765,12 @@ function buildCard(date, dept, isToday, extraClass, cointerns) {
     cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + cointerns.join(', ') + '</div>';
   }
 
+  const isNight = !isHoliday && dept && (dept.includes('Night') || dept === 'Casuality Night');
+  let cabpoolHtml = '';
+  if (isNight && cabpool && cabpool.length > 0) {
+    cabpoolHtml = '<div class="cabpool"><div class="cabpool-label">🚕 Can pool cab with</div>' + cabpool.join(', ') + '</div>';
+  }
+
   const classes = ['day-card', isToday ? 'today' : '', isHoliday ? 'holiday' : '', extraClass || ''].filter(Boolean).join(' ');
 
   return '<div class="' + classes + '">' +
@@ -21743,6 +21782,7 @@ function buildCard(date, dept, isToday, extraClass, cointerns) {
     '</div>' +
     scrubsHtml +
     cointernHtml +
+    cabpoolHtml +
     '</div>';
 }
 
@@ -21786,7 +21826,10 @@ function updateSingleDay() {
   const today = todayStr();
   const coKey = entry[1] ? entry[0] + '|' + entry[1] : null;
   const coList = coKey ? (CO_INTERNS[coKey] || []).filter(s => s !== currentSerial) : [];
-  const card = buildCard(entry[0], entry[1], entry[0] === today, '', coList);
+  const nightPool = (NIGHT_POOL[entry[0]] || []).filter(s => s !== currentSerial);
+  const isThisNight = entry[1] && (entry[1].includes('Night') || entry[1] === 'Casuality Night');
+  const cabList = isThisNight ? nightPool.filter(s => !coList.includes(s)) : [];
+  const card = buildCard(entry[0], entry[1], entry[0] === today, '', coList, cabList);
   sdr.className = 'single-day-result visible';
   sdr.innerHTML = '<div class="single-day-label">Result for ' + targetDate + '</div>' + card;
   // Hide full schedule when showing single day
@@ -21859,7 +21902,10 @@ function renderCards(data) {
       if (!hidden) visibleCount++;
       const coKey2 = dept ? date + '|' + dept : null;
       const coList2 = coKey2 ? (CO_INTERNS[coKey2] || []).filter(s => s !== currentSerial) : [];
-      const card = buildCard(date, dept, isToday, hidden ? 'hidden' : '', coList2);
+      const nightPool2 = (NIGHT_POOL[date] || []).filter(s => s !== currentSerial);
+      const isThisNight2 = dept && (dept.includes('Night') || dept === 'Casuality Night');
+      const cabList2 = isThisNight2 ? nightPool2.filter(s => !coList2.includes(s)) : [];
+      const card = buildCard(date, dept, isToday, hidden ? 'hidden' : '', coList2, cabList2);
       cardsHtml += card;
     });
 
