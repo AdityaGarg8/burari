@@ -216,6 +216,15 @@
   #results { display: none; }
   #results.visible { display: block; }
 
+  .intern-name-header {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+
   .month-group { margin-bottom: 32px; }
   .month-label {
     font-family: 'Space Mono', monospace;
@@ -21687,6 +21696,67 @@ function todayStr() {
   return String(d.getDate()).padStart(2,'0') + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + d.getFullYear();
 }
 
+const NAMES = {
+  "1": "Aaryan",
+  "2": "Aarzoo",
+  "3": "Aayushi",
+  "4": "Abhishek",
+  "5": "Abhyudita",
+  "6": "Aditi",
+  "7": "Aditya Agarwal",
+  "8": "Aditya Garg",
+  "9": "Aditya Pakhariya",
+  "10": "Aditya Prasad",
+  "11": "Aditya Sharma",
+  "12": "Adnan",
+  "13": "Adwait",
+  "14": "Ajay",
+  "15": "Akanksha",
+  "16": "Akshat",
+  "17": "Alingti",
+  "18": "Amit Kumar",
+  "19": "Amit Rajput",
+  "20": "Amitesh",
+  "21": "Anand Jaiswal",
+  "22": "Anand Prakash",
+  "23": "Ananya Beriwal",
+  "24": "Ananya Narula",
+  "25": "Anju Kumari",
+  "26": "Anju Meena",
+  "27": "Ankit Kumar",
+  "28": "Ankit Kumar",
+  "29": "Ankit Raj",
+  "30": "Ankit Yadav",
+  "31": "Anmol",
+  "32": "Anoushka",
+  "33": "Ansh",
+  "34": "Anshika",
+  "35": "Anshul",
+  "36": "Ansuiya",
+  "37": "Apoorv",
+  "38": "Arjun",
+  "39": "Arka",
+  "40": "Arushi",
+  "41": "Aryan",
+  "42": "Ashish",
+  "43": "Ashu",
+  "44": "Atharva",
+  "45": "Ayushi",
+  "46": "Bhagya Sri",
+  "47": "Bhavya",
+  "48": "Binu",
+  "49": "Chandraj",
+  "50": "Chirag Bansal",
+  "51": "Unknown",
+  "52": "Unknown",
+  "53": "Unknown",
+  "54": "Unknown",
+  "55": "Unknown",
+  "56": "Unknown",
+  "57": "Unknown",
+  "58": "Unknown",
+};
+
 // Precompute: for each (date, dept) -> sorted list of all serials posted there
 const CO_INTERNS = {};
 Object.entries(SCHEDULE).forEach(([serial, entries]) => {
@@ -21762,13 +21832,13 @@ function buildCard(date, dept, isToday, extraClass, cointerns, cabpool) {
 
   let cointernHtml = '';
   if (!isHoliday && cointerns && cointerns.length > 0) {
-    cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + cointerns.join(', ') + '</div>';
+    cointernHtml = '<div class="cointerns"><div class="cointerns-label">Co-interns</div>' + cointerns.map(s => s + ': ' + (NAMES[s] || s)).join(', ') + '</div>';
   }
 
   const isNight = !isHoliday && dept && (dept.includes('Night') || dept === 'Casuality Night');
   let cabpoolHtml = '';
   if (isNight && cabpool && cabpool.length > 0) {
-    cabpoolHtml = '<div class="cabpool"><div class="cabpool-label">🚕 Can pool cab with</div>' + cabpool.join(', ') + '</div>';
+    cabpoolHtml = '<div class="cabpool"><div class="cabpool-label">🚕 Can pool cab with</div>' + cabpool.map(s => s + ': ' + (NAMES[s] || s)).join(', ') + '</div>';
   }
 
   const classes = ['day-card', isToday ? 'today' : '', isHoliday ? 'holiday' : '', extraClass || ''].filter(Boolean).join(' ');
@@ -21888,7 +21958,8 @@ function renderCards(data) {
     months[key].push([date, dept, d]);
   });
 
-  let html = '';
+  const internName = currentSerial + ': ' + (NAMES[currentSerial] || ('Serial ' + currentSerial));
+  let html = '<div class="intern-name-header">' + internName + '</div>';
   Object.entries(months).forEach(([monthKey, days]) => {
     let cardsHtml = '';
     let visibleCount = 0;
