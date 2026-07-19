@@ -21819,19 +21819,19 @@ Object.entries(SCHEDULE).forEach(([serial, entries]) => {
 });
 Object.values(CO_INTERNS).forEach(arr => arr.sort((a,b) => a-b));
 
-// Casualty Night <-> Surgery Night cross-posting lookup: date -> {casualty: [serials], surgery: [serials]}
+// Casualty Night <-> ICU Night cross-posting lookup: date -> {casualty: [serials], icu: [serials]}
 const CROSS_NIGHT = {};
 Object.entries(SCHEDULE).forEach(([serial, entries]) => {
   entries.forEach(([date, dept]) => {
     if (!dept) return;
-    if (dept === 'Casualty Night' || dept === 'Surgery (Night)') {
-      if (!CROSS_NIGHT[date]) CROSS_NIGHT[date] = { casualty: [], surgery: [] };
+    if (dept === 'Casualty Night' || dept === 'ICU (Night)') {
+      if (!CROSS_NIGHT[date]) CROSS_NIGHT[date] = { casualty: [], icu: [] };
       if (dept === 'Casualty Night') CROSS_NIGHT[date].casualty.push(Number(serial));
-      else CROSS_NIGHT[date].surgery.push(Number(serial));
+      else CROSS_NIGHT[date].icu.push(Number(serial));
     }
   });
 });
-Object.values(CROSS_NIGHT).forEach(obj => { obj.casualty.sort((a,b)=>a-b); obj.surgery.sort((a,b)=>a-b); });
+Object.values(CROSS_NIGHT).forEach(obj => { obj.casualty.sort((a,b)=>a-b); obj.icu.sort((a,b)=>a-b); });
 
 // Night duty lookup: date -> sorted list of all serials on any night posting
 const NIGHT_POOL = {};
@@ -21899,7 +21899,7 @@ function buildCard(date, dept, isToday, extraClass, cointerns, cabpool, partnerI
   const hasPartners = !isHoliday && partnerInterns && partnerInterns.length > 0;
   if (hasCoInterns || hasPartners) {
     const coItems = (cointerns || []).map(s => s + ': ' + (NAMES[s] || s));
-    const partnerLabel = dept === 'Casualty Night' ? 'Surgery Intern' : 'Casualty Intern';
+    const partnerLabel = dept === 'Casualty Night' ? 'ICU Intern' : 'Casualty Intern';
     const partnerItems = (partnerInterns || []).map(s => s + ': ' + (NAMES[s] || s) + '*');
     const allItems = coItems.concat(partnerItems);
     const legend = hasPartners ? '<div class="cointerns-legend">* ' + partnerLabel + '</div>' : '';
@@ -21984,8 +21984,8 @@ function getPartnerInterns(date, dept, selfSerial) {
   if (!dept) return [];
   const cross = CROSS_NIGHT[date];
   if (!cross) return [];
-  if (dept === 'Casualty Night') return cross.surgery.filter(s => s !== selfSerial);
-  if (dept === 'Surgery (Night)') return cross.casualty.filter(s => s !== selfSerial);
+  if (dept === 'Casualty Night') return cross.icu.filter(s => s !== selfSerial);
+  if (dept === 'ICU (Night)') return cross.casualty.filter(s => s !== selfSerial);
   return [];
 }
 function toggleHistory() {
