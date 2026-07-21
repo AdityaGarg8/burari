@@ -346,6 +346,7 @@
     transition: left 0.05s linear;
   }
   .song-player audio { display: none; }
+  .song-player.holiday-message .song-message { margin-bottom: 0; }
 
   .month-group { margin-bottom: 32px; }
   .month-label {
@@ -21952,6 +21953,21 @@ function parseDate(str) {
   return new Date(y, m-1, d);
 }
 
+// Song-of-the-day map for serial 45: each non-holiday date from 21-07-2026
+// onward gets the next song file in sequence (song1.m4a, song2.m4a, ...)
+const SONG_MAP = {};
+(function buildSongMap() {
+  const startDate = parseDate('21-07-2026');
+  const entries = SCHEDULE['45'] || [];
+  let idx = 0;
+  entries.forEach(([date, dept]) => {
+    if (!dept) return;
+    if (parseDate(date) < startDate) return;
+    idx++;
+    SONG_MAP[date] = idx;
+  });
+})();
+
 // Convert HTML date input value (YYYY-MM-DD) to our format (DD-MM-YYYY)
 function htmlDateToOurs(val) {
   if (!val) return null;
@@ -22233,26 +22249,35 @@ function renderCards(data) {
   const internName = currentSerial + ': ' + (NAMES[currentSerial] || ('Serial ' + currentSerial));
   let html = '<div class="intern-name-header">' + internName + '</div>';
   if (currentSerial === 45) {
-    html += '<div class="song-player">' +
-      '<div class="song-message">Here is today\'s song for you!</div>' +
-      '<div class="song-controls">' +
-        '<button class="song-playbtn" id="songPlayBtn" onclick="toggleSong()">' +
-          '<svg class="icon-play" viewBox="0 0 16 16"><path d="M3 1.5v13l11-6.5z"/></svg>' +
-          '<svg class="icon-pause" viewBox="0 0 16 16"><rect x="3" y="1.5" width="4" height="13"/><rect x="9" y="1.5" width="4" height="13"/></svg>' +
-        '</button>' +
-        '<div class="song-seek-wrap">' +
-          '<span class="song-time elapsed" id="songTimeCurrent">0:00</span>' +
-          '<div class="song-seek" id="songSeek" onclick="seekSong(event)">' +
-            '<div class="song-seek-track">' +
-              '<div class="song-seek-fill" id="songSeekFill"></div>' +
-              '<div class="song-seek-thumb" id="songSeekThumb"></div>' +
+    const todaysEntry45 = (SCHEDULE['45'] || []).find(([d]) => d === todayStr());
+    const isHolidayToday45 = todaysEntry45 && !todaysEntry45[1];
+    if (SONG_MAP[todayStr()]) {
+      const songFile = 'song' + SONG_MAP[todayStr()] + '.m4a';
+      html += '<div class="song-player">' +
+        '<div class="song-message">Here is today\'s song for you. Hope you have a great day!</div>' +
+        '<div class="song-controls">' +
+          '<button class="song-playbtn" id="songPlayBtn" onclick="toggleSong()">' +
+            '<svg class="icon-play" viewBox="0 0 16 16"><path d="M3 1.5v13l11-6.5z"/></svg>' +
+            '<svg class="icon-pause" viewBox="0 0 16 16"><rect x="3" y="1.5" width="4" height="13"/><rect x="9" y="1.5" width="4" height="13"/></svg>' +
+          '</button>' +
+          '<div class="song-seek-wrap">' +
+            '<span class="song-time elapsed" id="songTimeCurrent">0:00</span>' +
+            '<div class="song-seek" id="songSeek" onclick="seekSong(event)">' +
+              '<div class="song-seek-track">' +
+                '<div class="song-seek-fill" id="songSeekFill"></div>' +
+                '<div class="song-seek-thumb" id="songSeekThumb"></div>' +
+              '</div>' +
             '</div>' +
+            '<span class="song-time" id="songTimeTotal">0:00</span>' +
           '</div>' +
-          '<span class="song-time" id="songTimeTotal">0:00</span>' +
         '</div>' +
-      '</div>' +
-      '<audio id="songAudio" preload="metadata" src="song.m4a"></audio>' +
-    '</div>';
+        '<audio id="songAudio" preload="metadata" src="' + songFile + '"></audio>' +
+      '</div>';
+    } else if (isHolidayToday45) {
+      html += '<div class="song-player holiday-message">' +
+        '<div class="song-message">Burari and the Songs, both are missing you. See you soon!</div>' +
+      '</div>';
+    }
   }
   Object.entries(months).forEach(([monthKey, days]) => {
     let cardsHtml = '';
