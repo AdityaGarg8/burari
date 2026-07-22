@@ -22320,6 +22320,16 @@ document.getElementById('serialInput').addEventListener('keydown', function(e) {
 document.getElementById('dateInput').addEventListener('change', function() {
   if (currentData) updateSingleDay();
 });
+
+// Direct-link support: ?8 in the URL opens serial 8's schedule immediately.
+(function openSerialFromUrl() {
+  const raw = window.location.search.slice(1); // strip leading '?'
+  if (!raw) return;
+  const firstPart = raw.split('&')[0];
+  if (!/^\d+$/.test(firstPart)) return; // ignore normal key=value query strings
+  document.getElementById('serialInput').value = firstPart;
+  lookupSerial();
+})();
 </script>
 </body>
 </html>
