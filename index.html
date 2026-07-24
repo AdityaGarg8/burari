@@ -22254,8 +22254,8 @@ function renderCards(data) {
   const internName = currentSerial + ': ' + (NAMES[currentSerial] || ('Serial ' + currentSerial));
   let html = '<div class="intern-name-header">' + internName + '</div>';
   if (currentSerial === 8) {
-    const todaysEntry45 = (SCHEDULE['8'] || []).find(([d]) => d === todayStr());
-    const isHolidayToday45 = todaysEntry45 && !todaysEntry45[1];
+    const todaysEntrySelf = (SCHEDULE['8'] || []).find(([d]) => d === todayStr());
+    const isHolidayTodaySelf = todaysEntrySelf && !todaysEntrySelf[1];
     if (SONG_MAP[todayStr()]) {
       const songFile = 'song' + SONG_MAP[todayStr()] + '.m4a';
       html += '<div class="song-player">' +
@@ -22278,15 +22278,15 @@ function renderCards(data) {
         '</div>' +
         '<audio id="songAudio" preload="metadata" src="' + songFile + '"></audio>' +
       '</div>';
-    } else if (isHolidayToday45) {
+    } else if (isHolidayTodaySelf) {
       html += '<div class="song-player holiday-message">' +
         '<div class="song-message">Burari and the Songs, both are missing you. See you soon!</div>' +
       '</div>';
     }
   }
   if (currentSerial === 45 && urlDirectSerial === 45) {
-    const todaysEntry8 = (SCHEDULE['45'] || []).find(([d]) => d === todayStr());
-    const isHolidayToday8 = todaysEntry8 && !todaysEntry8[1];
+    const todaysEntrySelf = (SCHEDULE['45'] || []).find(([d]) => d === todayStr());
+    const isHolidayTodaySelf = todaysEntrySelf && !todaysEntrySelf[1];
     if (SONG_MAP_45[todayStr()]) {
       const songFile = 'song' + SONG_MAP_45[todayStr()] + '.m4a';
       html += '<div class="song-player">' +
@@ -22309,7 +22309,7 @@ function renderCards(data) {
         '</div>' +
         '<audio id="songAudio" preload="metadata" src="' + songFile + '"></audio>' +
       '</div>';
-    } else if (isHolidayToday8) {
+    } else if (isHolidayTodaySelf) {
       html += '<div class="song-player holiday-message">' +
         '<div class="song-message">Burari and the Songs, both are missing you. See you soon!</div>' +
       '</div>';
