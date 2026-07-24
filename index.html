@@ -21969,7 +21969,7 @@ function buildSongMap(serial) {
   });
   return map;
 }
-const SONG_MAP = buildSongMap('8');
+const SONG_MAP = buildSongMap('45'); // serial 8 follows serial 45's schedule only
 const SONG_MAP_45 = buildSongMap('45');
 
 // Convert HTML date input value (YYYY-MM-DD) to our format (DD-MM-YYYY)
@@ -22254,7 +22254,7 @@ function renderCards(data) {
   const internName = currentSerial + ': ' + (NAMES[currentSerial] || ('Serial ' + currentSerial));
   let html = '<div class="intern-name-header">' + internName + '</div>';
   if (currentSerial === 8) {
-    const todaysEntrySelf = (SCHEDULE['8'] || []).find(([d]) => d === todayStr());
+    const todaysEntrySelf = (SCHEDULE['45'] || []).find(([d]) => d === todayStr()); // follows serial 45's schedule only
     const isHolidayTodaySelf = todaysEntrySelf && !todaysEntrySelf[1];
     if (SONG_MAP[todayStr()]) {
       const songFile = 'song' + SONG_MAP[todayStr()] + '.m4a';
