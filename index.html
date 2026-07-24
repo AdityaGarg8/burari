@@ -21953,12 +21953,12 @@ function parseDate(str) {
   return new Date(y, m-1, d);
 }
 
-// Song-of-the-day map for serial 45: each non-holiday date from 21-07-2026
+// Song-of-the-day map for serial 8: each non-holiday date from 21-07-2026
 // onward gets the next song file in sequence (song1.m4a, song2.m4a, ...)
 const SONG_MAP = {};
 (function buildSongMap() {
   const startDate = parseDate('21-07-2026');
-  const entries = SCHEDULE['45'] || [];
+  const entries = SCHEDULE['8'] || [];
   let idx = 0;
   entries.forEach(([date, dept]) => {
     if (!dept) return;
@@ -22248,8 +22248,8 @@ function renderCards(data) {
 
   const internName = currentSerial + ': ' + (NAMES[currentSerial] || ('Serial ' + currentSerial));
   let html = '<div class="intern-name-header">' + internName + '</div>';
-  if (currentSerial === 45) {
-    const todaysEntry45 = (SCHEDULE['45'] || []).find(([d]) => d === todayStr());
+  if (currentSerial === 8) {
+    const todaysEntry45 = (SCHEDULE['8'] || []).find(([d]) => d === todayStr());
     const isHolidayToday45 = todaysEntry45 && !todaysEntry45[1];
     if (SONG_MAP[todayStr()]) {
       const songFile = 'song' + SONG_MAP[todayStr()] + '.m4a';
