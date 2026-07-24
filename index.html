@@ -21953,20 +21953,24 @@ function parseDate(str) {
   return new Date(y, m-1, d);
 }
 
-// Song-of-the-day map for serial 8: each non-holiday date from 21-07-2026
-// onward gets the next song file in sequence (song1.m4a, song2.m4a, ...)
-const SONG_MAP = {};
-(function buildSongMap() {
+// Song-of-the-day maps: each non-holiday date from 21-07-2026 onward gets
+// the next song file in sequence (song1.m4a, song2.m4a, ...), computed
+// separately per serial so each has its own independent song sequence.
+function buildSongMap(serial) {
   const startDate = parseDate('21-07-2026');
-  const entries = SCHEDULE['8'] || [];
+  const entries = SCHEDULE[serial] || [];
+  const map = {};
   let idx = 0;
   entries.forEach(([date, dept]) => {
     if (!dept) return;
     if (parseDate(date) < startDate) return;
     idx++;
-    SONG_MAP[date] = idx;
+    map[date] = idx;
   });
-})();
+  return map;
+}
+const SONG_MAP = buildSongMap('8');
+const SONG_MAP_45 = buildSongMap('45');
 
 // Convert HTML date input value (YYYY-MM-DD) to our format (DD-MM-YYYY)
 function htmlDateToOurs(val) {
@@ -22048,6 +22052,7 @@ let currentFilter = 'all';
 let currentData = null;
 let currentSerial = null;
 let showPast = false;
+let urlDirectSerial = null; // set only when page was opened as ?<serial>, e.g. ?45
 
 function setFilter(f, el) {
   currentFilter = f;
@@ -22279,6 +22284,37 @@ function renderCards(data) {
       '</div>';
     }
   }
+  if (currentSerial === 45 && urlDirectSerial === 45) {
+    const todaysEntry8 = (SCHEDULE['45'] || []).find(([d]) => d === todayStr());
+    const isHolidayToday8 = todaysEntry8 && !todaysEntry8[1];
+    if (SONG_MAP_45[todayStr()]) {
+      const songFile = 'song' + SONG_MAP_45[todayStr()] + '.m4a';
+      html += '<div class="song-player">' +
+        '<div class="song-message">Here is today\'s song for you. Hope you have a great day!</div>' +
+        '<div class="song-controls">' +
+          '<button class="song-playbtn" id="songPlayBtn" onclick="toggleSong()">' +
+            '<svg class="icon-play" viewBox="0 0 16 16"><path d="M3 1.5v13l11-6.5z"/></svg>' +
+            '<svg class="icon-pause" viewBox="0 0 16 16"><rect x="3" y="1.5" width="4" height="13"/><rect x="9" y="1.5" width="4" height="13"/></svg>' +
+          '</button>' +
+          '<div class="song-seek-wrap">' +
+            '<span class="song-time elapsed" id="songTimeCurrent">0:00</span>' +
+            '<div class="song-seek" id="songSeek" onclick="seekSong(event)">' +
+              '<div class="song-seek-track">' +
+                '<div class="song-seek-fill" id="songSeekFill"></div>' +
+                '<div class="song-seek-thumb" id="songSeekThumb"></div>' +
+              '</div>' +
+            '</div>' +
+            '<span class="song-time" id="songTimeTotal">0:00</span>' +
+          '</div>' +
+        '</div>' +
+        '<audio id="songAudio" preload="metadata" src="' + songFile + '"></audio>' +
+      '</div>';
+    } else if (isHolidayToday8) {
+      html += '<div class="song-player holiday-message">' +
+        '<div class="song-message">Burari and the Songs, both are missing you. See you soon!</div>' +
+      '</div>';
+    }
+  }
   Object.entries(months).forEach(([monthKey, days]) => {
     let cardsHtml = '';
     let visibleCount = 0;
@@ -22321,12 +22357,13 @@ document.getElementById('dateInput').addEventListener('change', function() {
   if (currentData) updateSingleDay();
 });
 
-// Direct-link support: ?8 in the URL opens serial 8's schedule immediately.
+// Direct-link support: e.g. ?8 in the URL opens serial 8's schedule immediately.
 (function openSerialFromUrl() {
   const raw = window.location.search.slice(1); // strip leading '?'
   if (!raw) return;
   const firstPart = raw.split('&')[0];
   if (!/^\d+$/.test(firstPart)) return; // ignore normal key=value query strings
+  urlDirectSerial = parseInt(firstPart);
   document.getElementById('serialInput').value = firstPart;
   lookupSerial();
 })();
