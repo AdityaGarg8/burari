@@ -22139,6 +22139,16 @@ function revealSong45() {
   if (el) el.style.display = 'block';
 }
 
+function trackSong45Play() {
+  // Centralized play counter for serial 45's song, via a maintained free
+  // hit-counter API (countapi.mileshilliard.com — a modern, actively
+  // maintained, no-signup successor to the old countapi.xyz). No auth
+  // token needed, so nothing sensitive ships in this client-side page.
+  // Check the total any time by visiting:
+  // https://countapi.mileshilliard.com/api/v1/get/burari_45_song
+  fetch('https://countapi.mileshilliard.com/api/v1/hit/burari_45_song').catch(() => {});
+}
+
 function toggleSong() {
   const audio = document.getElementById('songAudio');
   const btn = document.getElementById('songPlayBtn');
@@ -22146,6 +22156,12 @@ function toggleSong() {
   if (audio.paused) {
     audio.play();
     btn.classList.add('playing');
+    // Only count this as a "play" the first time this song is started,
+    // not when resuming after a pause.
+    if (currentSerial === 45 && !audio.dataset.tracked) {
+      audio.dataset.tracked = '1';
+      trackSong45Play();
+    }
   } else {
     audio.pause();
     btn.classList.remove('playing');
@@ -22189,6 +22205,7 @@ document.addEventListener('ended', function(e) {
   if (e.target && e.target.id === 'songAudio') {
     const btn = document.getElementById('songPlayBtn');
     if (btn) btn.classList.remove('playing');
+    delete e.target.dataset.tracked; // a full replay from the start counts as a new play
   }
 }, true);
 
