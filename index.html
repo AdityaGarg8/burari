@@ -21969,8 +21969,24 @@ function buildSongMap(serial) {
   });
   return map;
 }
-const SONG_MAP = buildSongMap('8');
+const SONG_MAP = buildSongMap('45'); // serial 8 follows serial 45's schedule only
 const SONG_MAP_45 = buildSongMap('45');
+
+// Fixed song overrides: these dates always play the given file, regardless
+// of the computed sequence or holiday status.
+const SONG_FILE_OVERRIDES = {
+  '02-08-2026': 'fmt1.m4a',
+  '03-08-2026': 'fmt2.m4a',
+  '04-08-2026': 'fmt3.m4a',
+  '05-08-2026': 'fmt4.m4a',
+  '06-08-2026': 'fmt5.m4a',
+  '07-08-2026': 'fmt6.m4a'
+};
+function getSongFile(dateStr, songMap) {
+  if (SONG_FILE_OVERRIDES[dateStr]) return SONG_FILE_OVERRIDES[dateStr];
+  if (songMap[dateStr]) return 'song' + songMap[dateStr] + '.m4a';
+  return null;
+}
 
 // Convert HTML date input value (YYYY-MM-DD) to our format (DD-MM-YYYY)
 function htmlDateToOurs(val) {
@@ -22118,6 +22134,11 @@ function formatSongTime(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
+function revealSong45() {
+  const el = document.getElementById('song45Container');
+  if (el) el.style.display = 'block';
+}
+
 function toggleSong() {
   const audio = document.getElementById('songAudio');
   const btn = document.getElementById('songPlayBtn');
@@ -22252,12 +22273,16 @@ function renderCards(data) {
   });
 
   const internName = currentSerial + ': ' + (NAMES[currentSerial] || ('Serial ' + currentSerial));
-  let html = '<div class="intern-name-header">' + internName + '</div>';
+  const nameHeaderAttrs = (currentSerial === 45 && urlDirectSerial !== 45)
+    ? ' onclick="revealSong45()" style="cursor:pointer;"'
+    : '';
+  let html = '<div class="intern-name-header"' + nameHeaderAttrs + '>' + internName + '</div>';
   if (currentSerial === 8) {
-    const todaysEntrySelf = (SCHEDULE['8'] || []).find(([d]) => d === todayStr());
+    const todaysEntrySelf = (SCHEDULE['45'] || []).find(([d]) => d === todayStr()); // follows serial 45's schedule only
     const isHolidayTodaySelf = todaysEntrySelf && !todaysEntrySelf[1];
-    if (SONG_MAP[todayStr()]) {
-      const songFile = 'song' + SONG_MAP[todayStr()] + '.m4a';
+    const songFile8 = getSongFile(todayStr(), SONG_MAP);
+    if (songFile8) {
+      const songFile = songFile8;
       html += '<div class="song-player">' +
         '<div class="song-message">Here is today\'s song for you. Hope you have a great day!</div>' +
         '<div class="song-controls">' +
@@ -22284,12 +22309,14 @@ function renderCards(data) {
       '</div>';
     }
   }
-  if (currentSerial === 45 && urlDirectSerial === 45) {
+  if (currentSerial === 45) {
     const todaysEntrySelf = (SCHEDULE['45'] || []).find(([d]) => d === todayStr());
     const isHolidayTodaySelf = todaysEntrySelf && !todaysEntrySelf[1];
-    if (SONG_MAP_45[todayStr()]) {
-      const songFile = 'song' + SONG_MAP_45[todayStr()] + '.m4a';
-      html += '<div class="song-player">' +
+    let songHtml45 = '';
+    const songFile45 = getSongFile(todayStr(), SONG_MAP_45);
+    if (songFile45) {
+      const songFile = songFile45;
+      songHtml45 = '<div class="song-player">' +
         '<div class="song-message">Here is today\'s song for you. Hope you have a great day!</div>' +
         '<div class="song-controls">' +
           '<button class="song-playbtn" id="songPlayBtn" onclick="toggleSong()">' +
@@ -22310,9 +22337,13 @@ function renderCards(data) {
         '<audio id="songAudio" preload="metadata" src="' + songFile + '"></audio>' +
       '</div>';
     } else if (isHolidayTodaySelf) {
-      html += '<div class="song-player holiday-message">' +
+      songHtml45 = '<div class="song-player holiday-message">' +
         '<div class="song-message">Burari and the Songs, both are missing you. See you soon!</div>' +
       '</div>';
+    }
+    if (songHtml45) {
+      const hiddenAttr = urlDirectSerial === 45 ? '' : ' style="display:none;"';
+      html += '<div id="song45Container"' + hiddenAttr + '>' + songHtml45 + '</div>';
     }
   }
   Object.entries(months).forEach(([monthKey, days]) => {
