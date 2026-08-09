@@ -24916,7 +24916,10 @@ const SONG_FILE_OVERRIDES = {
   '04-08-2026': 'fmt3.m4a',
   '05-08-2026': 'fmt4.m4a',
   '06-08-2026': 'fmt5.m4a',
-  '07-08-2026': 'fmt6.m4a'
+  '07-08-2026': 'fmt6.m4a',
+  '13-08-2026': 'extra1.m4a',
+  '15-08-2026': 'extra2.m4a',
+  '16-08-2026': 'extra3.m4a'
 };
 function getSongFile(dateStr, songMap) {
   if (SONG_FILE_OVERRIDES[dateStr]) return SONG_FILE_OVERRIDES[dateStr];
@@ -25073,6 +25076,8 @@ function formatSongTime(sec) {
 function revealSong45() {
   const el = document.getElementById('song45Container');
   if (el) el.style.display = 'block';
+  const welcome = document.getElementById('welcomeBack45');
+  if (welcome) welcome.style.display = 'none';
 }
 
 function trackSong45Play() {
@@ -25297,6 +25302,11 @@ function renderCards(data) {
     if (songHtml45) {
       const hiddenAttr = urlDirectSerial === 45 ? '' : ' style="display:none;"';
       html += '<div id="song45Container"' + hiddenAttr + '>' + songHtml45 + '</div>';
+    }
+    if (todayStr() === '09-08-2026' || todayStr() === '10-08-2026') {
+      html += '<div id="welcomeBack45" class="song-player welcome-message">' +
+        '<div class="song-message">Welcome back!</div>' +
+      '</div>';
     }
   }
   Object.entries(months).forEach(([monthKey, days]) => {
